@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="60 seconds" debug="true">
+	<!-- logger上下文名称 默认default -->
+	<contextName>default</contextName>
+
+
+	<!--////////////////////////Property部分//////////////////////// -->
+
+	<!--日志文件存储的文件夹根路径 -->
+	<property name="LOG_HOME" value="/home/zhanghy/jp/logs/" />
+	<!--当使用异步日志时，日志队列中存储的最大日志对象个数 -->
+	<property name="maxQueueSize" value="512" />
+	<!--数据日志的字符集 -->
+	<property name="charset" value="UTF-8" />
+	<!--当使用异步日志时，日志队列到达20%容量时，是否要丢弃TRACE、DEBUG和INFO级别的event。0为不丢弃 -->
+	<property name="discardingThreshold" value="0" />
+	<!--同步日志的打印形式, 由于同步日志有CallData，所以可以输出行号，调用方法参数等信息 -->
+	<property name="syncContentPattern"
+		value="%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{100}.%method [%file:%line] - %msg%n" />
+	<!--异步日志的打印形式, 异步日志为了提高效率，屏蔽掉了调用级别的信息，因此行号，调用方法参数等不再输出 -->
+	<property name="asyncContentPattern"
+		value="%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{100} - %msg%n" />
+
+	<!--全量日志文件的时间滚动生成策略 -->
+	<property name="fullFileNamePattern" value="full-%d{yyyy-MM-dd}.log" />
+	<!--核心组件core日志文件的时间滚动生成策略 -->
+	<property name="coreFileNamePattern" value="core-%d{yyyy-MM-dd}.log" />
+	<!--接口日志文件的时间滚动生成策略 -->
+	<property name="interfaceFileNamePattern" value="interface-%d{yyyy-MM-dd}.log" />
+	<!--web日志文件的时间滚动生成策略 -->
+	<property name="webFileNamePattern" value="web-%d{yyyy-MM-dd}.log" />
+	
+	<!-- 分布式部署日志打印形式，主要增加了自定义的参数变量 -->
+    <property name="clusterContentPattern"
+              value="%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{100}.%method [%file:%line] - %msg%n"/>
+
+	<!--////////////////////////Appender部分//////////////////////// -->
+	<!-- 记录全量日志同步策略的Appender -->
+	<appender name="FULL_FILE_OUT_SYNC"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${LOG_HOME}/full/full.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${LOG_HOME}/full/${fullFileNamePattern}
+			</fileNamePattern>
+		</rollingPolicy>
+		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder"> <!-- com.halo.core.log.CustomPatternLayoutEncoder -->
+			<charset>${charset}</charset>
+			<pattern>${clusterContentPattern}</pattern>
+		</encoder>
+	</appender>
+
+	<!-- 记录全量日志同步策略的Appender -->
+	<appender name="ERROR_FILE_OUT_SYNC"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${LOG_HOME}/core/error.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${LOG_HOME}/core/${fullFileNamePattern}
+			</fileNamePattern>
+		</rollingPolicy>
+		<!-- 级别过滤器 -->
+		<filter class="ch.qos.logback.classic.filter.LevelFilter">
+			<!-- 设置过滤级别 -->
+			<level>error</level>
+			<!-- 用于配置符合过滤条件的操作 -->
+			<onMatch>ACCEPT</onMatch>
+			<!-- 用于配置不符合过滤条件的操作 -->
+			<onMismatch>DENY</onMismatch>
+		</filter>
+		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder"> <!-- com.halo.core.log.CustomPatternLayoutEncoder -->
+			<charset>${charset}</charset>
+			<pattern>${clusterContentPattern}</pattern>
+		</encoder>
+	</appender>
+
+	<!-- 记录核心组件日志同步策略的Appender -->
+	<appender name="CORE_FILE_OUT_SYNC"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${LOG_HOME}/core/core.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${LOG_HOME}/core/${coreFileNamePattern}
+			</fileNamePattern>
+		</rollingPolicy>
+		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<charset>${charset}</charset>
+			<pattern>${clusterContentPattern}</pattern>
+		</encoder>
+	</appender>
+
+	<!-- 控制台日志输出。一定是同步的 -->
+	<appender name="CONSOLE_OUT" class="ch.qos.logback.core.ConsoleAppender"><!-- ch.qos.logback.core.ConsoleAppender -->
+		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder"> <!-- com.halo.core.log.CustomPatternLayoutEncoder -->
+			<charset>${charset}</charset>
+			<pattern>${clusterContentPattern}</pattern>
+		</encoder>
+	</appender>
+
+
+	<!-- 记录Web层日志同步策略的Appender -->
+	<appender name="WEB_FILE_OUT_SYNC"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${LOG_HOME}/web/web.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${LOG_HOME}/web/${webFileNamePattern}
+			</fileNamePattern>
+		</rollingPolicy>
+		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<charset>${charset}</charset>
+			<pattern>${clusterContentPattern}</pattern>
+			<!--<pattern>${syncContentPattern}</pattern> -->
+		</encoder>
+	</appender>
+	<!--////////////////////////logger部分//////////////////////// -->
+
+
+	<root level="DEBUG">
+		<appender-ref ref="CONSOLE_OUT" />
+		<!-- 记录全量日志每天产生一个
+		<appender-ref ref="FULL_FILE_OUT_SYNC" /> -->
+		 <!-- 过滤异常日志
+        <appender-ref ref="ERROR_FILE_OUT_SYNC"/> -->
+	</root>
+</configuration>
